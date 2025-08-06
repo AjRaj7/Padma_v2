@@ -36,7 +36,7 @@ const OnboardingFlow: React.FC = () => {
       const newTotalBudget = totalAllocated + amount;
       
       if (newTotalBudget > parseInt(monthlyIncome)) {
-        alert(`⚠️ Cannot exceed monthly income!\n\nYou have ${formatCurrency(parseInt(monthlyIncome) - totalAllocated)} remaining to allocate.`);
+        alert(`You have ${formatCurrency(parseInt(monthlyIncome) - totalAllocated)} left to allocate.`);
         return;
       }
       
@@ -84,7 +84,7 @@ const OnboardingFlow: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-background to-surface flex items-center justify-center px-6">
         <div className="w-full max-w-md text-center">
           <h1 className="text-heading text-foreground mb-8">
-            Set your monthly flow
+            What's your monthly income?
           </h1>
           
           <div className="mb-8">
@@ -94,10 +94,9 @@ const OnboardingFlow: React.FC = () => {
               onChange={(e) => setMonthlyIncome(e.target.value)}
               className="bg-transparent border-0 border-b-2 border-text-secondary text-center text-5xl font-bold h-24 text-foreground"
               placeholder="0"
-              autoFocus
-            />
+                          />
             <p className="text-caption text-text-secondary mt-4">
-              Your total monthly income in ₹
+              Your total monthly income
             </p>
           </div>
           
@@ -115,10 +114,10 @@ const OnboardingFlow: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-surface px-6 py-8">
-      <div className="max-w-md mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
+    <div className="min-h-screen bg-gradient-to-br from-background to-surface flex flex-col">
+      <div className="max-w-md mx-auto flex flex-col min-h-screen w-full px-6">
+        {/* Fixed Header */}
+        <div className="flex-shrink-0 text-center py-8">
           <Button
             variant="ghost"
             size="sm"
@@ -129,10 +128,10 @@ const OnboardingFlow: React.FC = () => {
           </Button>
           
           <h1 className="text-heading text-foreground mb-2">
-            Carve your streams
+            Set up your categories.
           </h1>
           <p className="text-body text-text-secondary mb-4">
-            Allocate your {formatCurrency(parseInt(monthlyIncome))} into spending streams
+            Give each category a name and budget limit.
           </p>
           
           <div className="text-xl text-accent font-semibold">
@@ -140,83 +139,98 @@ const OnboardingFlow: React.FC = () => {
           </div>
         </div>
 
-        {/* Stream Creation Form */}
-        <Card className="glass-surface p-6 mb-6">
-          <div className="space-y-4">
-            <Input
-              value={streamName}
-              onChange={(e) => setStreamName(e.target.value)}
-              placeholder="Stream name (e.g., Food)"
-              className="bg-transparent border-border"
-            />
-            
-            <Input
-              type="number"
-              value={streamAmount}
-              onChange={(e) => setStreamAmount(e.target.value)}
-              placeholder="₹ Amount"
-              className="bg-transparent border-border"
-            />
-            
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="p-4 space-y-6">
+            {/* Stream Creation Form - Always visible at top */}
+            <Card className="glass-surface p-6 sticky top-0 z-10 bg-background/95 backdrop-blur-sm border border-border/20">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Bucket name
+                </label>
+                <Input
+                  value={streamName}
+                  onChange={(e) => setStreamName(e.target.value)}
+                  placeholder="e.g., Groceries, Entertainment, Transport"
+                  className="bg-transparent border-border"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Monthly budget
+                </label>
+                <Input
+                  type="number"
+                  value={streamAmount}
+                  onChange={(e) => setStreamAmount(e.target.value)}
+                  placeholder="e.g., ₹2000"
+                  className="bg-transparent border-border"
+                />
+              </div>
+              
+              <Button 
+                onClick={handleAddStream}
+                disabled={!streamName.trim() || !streamAmount || parseInt(streamAmount) <= 0}
+                className="w-full"
+              >
+                Add
+              </Button>
+            </div>
+          </Card>
 
-            
-            <Button 
-              onClick={handleAddStream}
-              disabled={!streamName.trim() || !streamAmount || parseInt(streamAmount) <= 0}
-              className="w-full"
-            >
-              Add Stream
-            </Button>
-          </div>
-        </Card>
-
-        {/* Stream List */}
-        {tempStreams.length > 0 && (
-          <div className="space-y-3 mb-8">
-            {tempStreams.map((stream) => (
-              <Card key={stream.id} className="glass-surface p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-body font-medium text-foreground">
-                        {stream.name}
-                      </span>
-                      {stream.isGoal && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-savings/20 text-savings font-medium">
-                          Goal
+            {/* Stream List */}
+            {tempStreams.length > 0 && (
+              <div className="space-y-3">
+                {tempStreams.map((stream) => (
+                <Card key={stream.id} className="glass-surface p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-body font-medium text-foreground">
+                          {stream.name}
                         </span>
-                      )}
+                        {stream.isGoal && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-savings/20 text-savings font-medium">
+                            Goal
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-3">
+                      <span className="text-body font-semibold text-foreground">
+                        {formatCurrency(stream.originalAmount)}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteStream(stream.id)}
+                        className="h-8 w-8 text-danger hover:bg-danger/20"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <span className="text-body font-semibold text-foreground">
-                      {formatCurrency(stream.originalAmount)}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteStream(stream.id)}
-                      className="h-8 w-8 text-danger hover:bg-danger/20"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))}
+            </div>
+          )}
           </div>
-        )}
+        </div>
 
-        {/* Completion */}
+        {/* Sticky Footer */}
         {tempStreams.length > 0 && (
-          <Button 
-            onClick={handleFinishSetup}
-            size="lg"
-            className="w-full"
-          >
-            Finish Setup
-          </Button>
+          <div className="flex-shrink-0 py-6 bg-gradient-to-t from-background via-background to-transparent">
+            <Button 
+              onClick={handleFinishSetup}
+              size="lg"
+              className="w-full"
+            >
+              Start using app
+            </Button>
+          </div>
         )}
       </div>
     </div>
