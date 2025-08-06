@@ -17,24 +17,65 @@ const StreamCard: React.FC<StreamCardProps> = ({
 }) => {
   const [swipeX, setSwipeX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [isActionTriggered, setIsActionTriggered] = useState(false);
   const startX = useRef(0);
   const currentX = useRef(0);
+  const velocity = useRef(0);
+  const lastMoveTime = useRef(0);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startX.current = e.touches[0].clientX;
+    currentX.current = e.touches[0].clientX;
     setIsDragging(true);
+    setIsActionTriggered(false);
+    velocity.current = 0;
+    lastMoveTime.current = Date.now();
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging) return;
     
-    currentX.current = e.touches[0].clientX;
-    const deltaX = currentX.current - startX.current;
+    const now = Date.now();
+    const newX = e.touches[0].clientX;
+    const deltaX = newX - startX.current;
     
-    // Limit swipe distance and add resistance
-    const maxSwipe = 120;
-    const resistance = 0.7;
-    const constrainedDelta = Math.sign(deltaX) * Math.min(Math.abs(deltaX) * resistance, maxSwipe);
+    // Calculate velocity for momentum
+    if (lastMoveTime.current > 0) {
+      const timeDelta = now - lastMoveTime.current;
+      if (timeDelta > 0) {
+        velocity.current = (newX - currentX.current) / timeDelta;
+      }
+    }
+    
+    currentX.current = newX;
+    lastMoveTime.current = now;
+    
+    // Smooth resistance curve - easier at the start, harder as it extends
+    const maxSwipe = 100;
+    const absDistance = Math.abs(deltaX);
+    
+    let resistance;
+    if (absDistance < 50) {
+      resistance = 0.9; // Very easy initial swipe
+    } else if (absDistance < 80) {
+      resistance = 0.6; // Moderate resistance
+    } else {
+      resistance = 0.3; // High resistance at the end
+    }
+    
+    const constrainedDelta = Math.sign(deltaX) * Math.min(absDistance * resistance, maxSwipe);
+    
+    // Trigger action feedback at threshold
+    const actionThreshold = 60;
+    if (Math.abs(constrainedDelta) > actionThreshold && !isActionTriggered) {
+      setIsActionTriggered(true);
+      // Haptic feedback
+      if ('vibrate' in navigator) {
+        navigator.vibrate(20);
+      }
+    } else if (Math.abs(constrainedDelta) <= actionThreshold && isActionTriggered) {
+      setIsActionTriggered(false);
+    }
     
     setSwipeX(constrainedDelta);
   };
@@ -43,35 +84,52 @@ const StreamCard: React.FC<StreamCardProps> = ({
     if (!isDragging) return;
     
     const deltaX = currentX.current - startX.current;
-    const threshold = 80;
+    const absDeltaX = Math.abs(deltaX);
+    const actionThreshold = 60;
     
-    if (Math.abs(deltaX) > threshold) {
-      // Haptic feedback
+    // Check for tap vs swipe
+    if (absDeltaX < 10 && Math.abs(velocity.current) < 0.5) {
+      // This is a tap
+      setTimeout(() => onTap(), 100); // Small delay to ensure smooth animation
+    } else if (absDeltaX > actionThreshold || Math.abs(velocity.current) > 1) {
+      // Action triggered by distance or velocity
+      
+      // Strong haptic for confirmed action
       if ('vibrate' in navigator) {
-        navigator.vibrate(50);
+        navigator.vibrate([30, 10, 30]);
       }
       
-      if (deltaX > 0) {
-        // Right swipe - edit (only if stream can be edited)
-        if (stream.name !== 'Savings') {
-          onEdit();
+      // Animate to full swipe first, then trigger action
+      const fullSwipe = deltaX > 0 ? 120 : -120;
+      setSwipeX(fullSwipe);
+      
+      setTimeout(() => {
+        if (deltaX > 0) {
+          // Right swipe - edit (only if stream can be edited)
+          if (stream.name !== 'Savings') {
+            onEdit();
+          }
+        } else {
+          // Left swipe - delete (only if stream can be deleted)
+          if (stream.name !== 'Savings' && stream.name !== 'Others') {
+            onDelete();
+          }
         }
-      } else {
-        // Left swipe - delete (only if stream can be deleted)
-        if (stream.name !== 'Savings' && stream.name !== 'Others') {
-          onDelete();
-        }
-      }
-    } else if (Math.abs(deltaX) < 10) {
-      // Small movement, treat as tap
-      onTap();
+        
+        // Reset after action
+        setTimeout(() => {
+          setSwipeX(0);
+        }, 200);
+      }, 150);
+    } else {
+      // Swipe didn't meet threshold, bounce back
+      setSwipeX(0);
     }
     
-    // Reset
-    setSwipeX(0);
+    // Reset state
     setIsDragging(false);
-    startX.current = 0;
-    currentX.current = 0;
+    setIsActionTriggered(false);
+    velocity.current = 0;
   };
 
   const handleClick = () => {
@@ -110,14 +168,19 @@ const StreamCard: React.FC<StreamCardProps> = ({
 
   return (
     <Card 
-      className="glass-surface p-6 touch-feedback cursor-pointer transition-all duration-300 hover:bg-surface/90 relative overflow-hidden"
+      className="glass-surface p-6 touch-feedback cursor-pointer relative overflow-hidden select-none"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onClick={handleClick}
       style={{
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        touchAction: 'pan-x',
+        WebkitTouchCallout: 'none',
         transform: `translateX(${swipeX}px)`,
-        transition: isDragging ? 'none' : 'transform 0.3s ease-out'
+        transition: isDragging ? 'none' : 'transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)',
+        willChange: 'transform'
       }}
     >
       <div className="flex items-center justify-between mb-4">
@@ -202,16 +265,37 @@ const StreamCard: React.FC<StreamCardProps> = ({
       {/* Swipe Action Indicators */}
       {Math.abs(swipeX) > 20 && (
         <div 
-          className={`absolute inset-y-0 flex items-center px-6 text-white font-medium ${
+          className={`absolute inset-y-0 flex items-center justify-center transition-all duration-200 ${
             swipeX > 0 
-              ? 'left-0 bg-accent/20 text-accent' 
-              : 'right-0 bg-danger/20 text-danger'
+              ? 'left-0 right-auto w-24' 
+              : 'right-0 left-auto w-24'
           }`}
+          style={{
+            background: swipeX > 0 
+              ? `linear-gradient(to right, rgba(0, 255, 255, ${Math.min(Math.abs(swipeX) / 80, 0.3)}), transparent)`
+              : `linear-gradient(to left, rgba(239, 68, 68, ${Math.min(Math.abs(swipeX) / 80, 0.3)}), transparent)`
+          }}
         >
-          {swipeX > 0 
-            ? (stream.name !== 'Savings' ? '✏️ Edit' : '') 
-            : (stream.name !== 'Savings' && stream.name !== 'Others' ? '🗑️ Delete' : '')
-          }
+          <div 
+            className={`flex items-center space-x-2 font-medium transition-all duration-200 ${
+              isActionTriggered ? 'scale-110' : 'scale-100'
+            } ${
+              swipeX > 0 ? 'text-cyan-400' : 'text-red-400'
+            }`}
+          >
+            <span className="text-lg">
+              {swipeX > 0 
+                ? (stream.name !== 'Savings' ? '✏️' : '') 
+                : (stream.name !== 'Savings' && stream.name !== 'Others' ? '🗑️' : '')
+              }
+            </span>
+            <span className="text-sm">
+              {swipeX > 0 
+                ? (stream.name !== 'Savings' ? 'Edit' : '') 
+                : (stream.name !== 'Savings' && stream.name !== 'Others' ? 'Delete' : '')
+              }
+            </span>
+          </div>
         </div>
       )}
     </Card>
