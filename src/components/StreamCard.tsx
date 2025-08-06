@@ -18,122 +18,192 @@ const StreamCard: React.FC<StreamCardProps> = ({
   const [swipeX, setSwipeX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isActionTriggered, setIsActionTriggered] = useState(false);
+  const [touchIntent, setTouchIntent] = useState<'unknown' | 'tap' | 'scroll' | 'swipe'>('unknown');
   const startX = useRef(0);
+  const startY = useRef(0);
   const currentX = useRef(0);
+  const currentY = useRef(0);
   const velocity = useRef(0);
   const lastMoveTime = useRef(0);
+  const hasMovedBeyondThreshold = useRef(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startX.current = e.touches[0].clientX;
+    startY.current = e.touches[0].clientY;
     currentX.current = e.touches[0].clientX;
-    setIsDragging(true);
+    currentY.current = e.touches[0].clientY;
+    setIsDragging(false); // Don't start dragging immediately
     setIsActionTriggered(false);
+    setTouchIntent('unknown');
     velocity.current = 0;
     lastMoveTime.current = Date.now();
+    hasMovedBeyondThreshold.current = false;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return;
-    
     const now = Date.now();
     const newX = e.touches[0].clientX;
+    const newY = e.touches[0].clientY;
     const deltaX = newX - startX.current;
+    const deltaY = newY - startY.current;
     
-    // Calculate velocity for momentum
-    if (lastMoveTime.current > 0) {
-      const timeDelta = now - lastMoveTime.current;
-      if (timeDelta > 0) {
-        velocity.current = (newX - currentX.current) / timeDelta;
+    // Determine touch intent if not already determined
+    if (touchIntent === 'unknown') {
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+      const threshold = 8; // Minimum movement to determine intent
+      
+      if (absX > threshold || absY > threshold) {
+        if (absY > absX * 1.5) {
+          // Vertical movement is dominant - this is scrolling
+          setTouchIntent('scroll');
+          return; // Don't interfere with scroll
+        } else if (absX > absY * 1.5 && absX > 15) {
+          // Horizontal movement is dominant - this might be a swipe
+          setTouchIntent('swipe');
+          setIsDragging(true);
+        } else if (absX < 10 && absY < 10) {
+          // Very small movement - likely a tap
+          setTouchIntent('tap');
+          return;
+        }
+      } else {
+        // Not enough movement yet
+        return;
       }
     }
     
-    currentX.current = newX;
-    lastMoveTime.current = now;
-    
-    // Smooth resistance curve - easier at the start, harder as it extends
-    const maxSwipe = 100;
-    const absDistance = Math.abs(deltaX);
-    
-    let resistance;
-    if (absDistance < 50) {
-      resistance = 0.9; // Very easy initial swipe
-    } else if (absDistance < 80) {
-      resistance = 0.6; // Moderate resistance
-    } else {
-      resistance = 0.3; // High resistance at the end
+    // If user is scrolling, don't interfere
+    if (touchIntent === 'scroll') {
+      return;
     }
     
-    const constrainedDelta = Math.sign(deltaX) * Math.min(absDistance * resistance, maxSwipe);
-    
-    // Trigger action feedback at threshold
-    const actionThreshold = 60;
-    if (Math.abs(constrainedDelta) > actionThreshold && !isActionTriggered) {
-      setIsActionTriggered(true);
-      // Haptic feedback
-      if ('vibrate' in navigator) {
-        navigator.vibrate(20);
+    // Only handle swipe movements
+    if (touchIntent === 'swipe' && isDragging) {
+      // Prevent default to stop scrolling during swipe
+      e.preventDefault();
+      
+      // Calculate velocity for momentum
+      if (lastMoveTime.current > 0) {
+        const timeDelta = now - lastMoveTime.current;
+        if (timeDelta > 0) {
+          velocity.current = (newX - currentX.current) / timeDelta;
+        }
       }
-    } else if (Math.abs(constrainedDelta) <= actionThreshold && isActionTriggered) {
-      setIsActionTriggered(false);
+      
+      currentX.current = newX;
+      currentY.current = newY;
+      lastMoveTime.current = now;
+      
+      // Smooth resistance curve - easier at the start, harder as it extends
+      const maxSwipe = 100;
+      const absDistance = Math.abs(deltaX);
+      
+      let resistance;
+      if (absDistance < 50) {
+        resistance = 0.9; // Very easy initial swipe
+      } else if (absDistance < 80) {
+        resistance = 0.6; // Moderate resistance
+      } else {
+        resistance = 0.3; // High resistance at the end
+      }
+      
+      const constrainedDelta = Math.sign(deltaX) * Math.min(absDistance * resistance, maxSwipe);
+      
+      // Trigger action feedback at threshold
+      const actionThreshold = 60;
+      if (Math.abs(constrainedDelta) > actionThreshold && !isActionTriggered) {
+        setIsActionTriggered(true);
+        hasMovedBeyondThreshold.current = true;
+        // Haptic feedback
+        if ('vibrate' in navigator) {
+          navigator.vibrate(20);
+        }
+      } else if (Math.abs(constrainedDelta) <= actionThreshold && isActionTriggered) {
+        setIsActionTriggered(false);
+      }
+      
+      setSwipeX(constrainedDelta);
     }
-    
-    setSwipeX(constrainedDelta);
   };
 
   const handleTouchEnd = () => {
-    if (!isDragging) return;
-    
-    const deltaX = currentX.current - startX.current;
-    const absDeltaX = Math.abs(deltaX);
-    const actionThreshold = 60;
-    
-    // Check for tap vs swipe
-    if (absDeltaX < 10 && Math.abs(velocity.current) < 0.5) {
-      // This is a tap
-      setTimeout(() => onTap(), 100); // Small delay to ensure smooth animation
-    } else if (absDeltaX > actionThreshold || Math.abs(velocity.current) > 1) {
-      // Action triggered by distance or velocity
+    // Handle different touch intents
+    if (touchIntent === 'tap' || touchIntent === 'unknown') {
+      // This is a tap - safe to trigger tap action
+      const deltaX = currentX.current - startX.current;
+      const deltaY = currentY.current - startY.current;
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
       
-      // Strong haptic for confirmed action
-      if ('vibrate' in navigator) {
-        navigator.vibrate([30, 10, 30]);
+      if (distance < 15) { // Very small movement = definite tap
+        setTimeout(() => onTap(), 50);
       }
+    } else if (touchIntent === 'swipe' && isDragging) {
+      // Handle swipe completion
+      const deltaX = currentX.current - startX.current;
+      const absDeltaX = Math.abs(deltaX);
+      const actionThreshold = 60;
       
-      // Animate to full swipe first, then trigger action
-      const fullSwipe = deltaX > 0 ? 120 : -120;
-      setSwipeX(fullSwipe);
-      
-      setTimeout(() => {
-        if (deltaX > 0) {
-          // Right swipe - edit (only if stream can be edited)
-          if (stream.name !== 'Savings') {
-            onEdit();
-          }
-        } else {
-          // Left swipe - delete (only if stream can be deleted)
-          if (stream.name !== 'Savings' && stream.name !== 'Others') {
-            onDelete();
-          }
+      if (absDeltaX > actionThreshold || Math.abs(velocity.current) > 1) {
+        // Action triggered by distance or velocity
+        
+        // Strong haptic for confirmed action
+        if ('vibrate' in navigator) {
+          navigator.vibrate([30, 10, 30]);
         }
         
-        // Reset after action
+        // Animate to full swipe first, then trigger action
+        const fullSwipe = deltaX > 0 ? 120 : -120;
+        setSwipeX(fullSwipe);
+        
         setTimeout(() => {
-          setSwipeX(0);
-        }, 200);
-      }, 150);
-    } else {
-      // Swipe didn't meet threshold, bounce back
+          if (deltaX > 0) {
+            // Right swipe - edit (only if stream can be edited)
+            if (stream.name !== 'Savings') {
+              onEdit();
+            }
+          } else {
+            // Left swipe - delete (only if stream can be deleted)
+            if (stream.name !== 'Savings' && stream.name !== 'Others') {
+              onDelete();
+            }
+          }
+          
+          // Reset after action
+          setTimeout(() => {
+            setSwipeX(0);
+          }, 200);
+        }, 150);
+      } else {
+        // Swipe didn't meet threshold, bounce back
+        setSwipeX(0);
+      }
+    } else if (touchIntent === 'scroll') {
+      // Don't do anything - let the scroll continue naturally
       setSwipeX(0);
     }
     
     // Reset state
     setIsDragging(false);
     setIsActionTriggered(false);
+    setTouchIntent('unknown');
     velocity.current = 0;
+    hasMovedBeyondThreshold.current = false;
+  };
+
+  const handleTouchCancel = () => {
+    // Reset everything if touch is cancelled (e.g., user scrolled page)
+    setSwipeX(0);
+    setIsDragging(false);
+    setIsActionTriggered(false);
+    setTouchIntent('unknown');
+    velocity.current = 0;
+    hasMovedBeyondThreshold.current = false;
   };
 
   const handleClick = () => {
-    if (!isDragging && swipeX === 0) {
+    // Only allow click if no swipe is active and touch intent wasn't swipe
+    if (!isDragging && swipeX === 0 && touchIntent !== 'swipe') {
       onTap();
     }
   };
@@ -172,15 +242,16 @@ const StreamCard: React.FC<StreamCardProps> = ({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchCancel}
       onClick={handleClick}
       style={{
         userSelect: 'none',
         WebkitUserSelect: 'none',
-        touchAction: 'pan-x',
+        touchAction: touchIntent === 'swipe' ? 'pan-x' : 'pan-y', // Allow vertical scrolling unless actively swiping
         WebkitTouchCallout: 'none',
         transform: `translateX(${swipeX}px)`,
         transition: isDragging ? 'none' : 'transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)',
-        willChange: 'transform'
+        willChange: isDragging ? 'transform' : 'auto'
       }}
     >
       <div className="flex items-center justify-between mb-4">
