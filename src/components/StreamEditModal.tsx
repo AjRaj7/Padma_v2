@@ -54,7 +54,7 @@ const StreamEditModal: React.FC<StreamEditModalProps> = ({
     const totalSpent = streamTransactions.reduce((sum, t) => sum + t.amount, 0);
     
     if (Number(amount) < totalSpent) {
-      setError(`Cannot be less than ${formatCurrency(totalSpent)} (total expenses in this stream)`);
+      setError(`Cannot be less than ${formatCurrency(totalSpent)} (total expenses in this category)`);
       return;
     }
 

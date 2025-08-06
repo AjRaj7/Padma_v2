@@ -11,7 +11,7 @@ Padma (meaning Lotus in Sanskrit) represents growth, purity, and mindfulness. Th
 ## ✨ Key Features
 
 ### Core Functionality
-- **Mindful Stream Management**: Organize your finances into intuitive "streams" (budget categories)
+- **Mindful Expense Management**: Organize your finances into intuitive expense categories
 - **Quick Expense Tracking**: Add expenses with minimal friction through beautiful, thumb-friendly interfaces
 - **Savings Goals**: Transform savings into positive growth visualization
 - **Mood Tracking**: Associate emotions with spending for deeper financial awareness
@@ -94,7 +94,7 @@ npm run build
 ```typescript
 interface AppState {
   user: UserProfile;      // Monthly income, currency, setup status
-  streams: Stream[];      // Budget categories/savings goals
+  streams: Stream[];      // Expense categories/savings goals
   transactions: Transaction[]; // All expense records
   templates: Template[];  // Recurring expense patterns
   analytics: AnalyticsData; // Insights and trends
@@ -103,9 +103,9 @@ interface AppState {
 
 ### Key Components
 - **SplashScreen**: Elegant app launch with lotus symbolism
-- **OnboardingFlow**: Gentle introduction to financial streams
+- **OnboardingFlow**: Gentle introduction to expense management
 - **MainDashboard**: Central command for all financial activity
-- **StreamCard**: Beautiful stream visualization with progress tracking
+- **StreamCard**: Beautiful expense visualization with progress tracking
 - **TransactionModal**: Mindful expense entry with mood tracking
 
 ### State Management
@@ -119,14 +119,14 @@ interface AppState {
 ### First Time User
 1. **Splash Screen** (2.5s) - Lotus animation with app branding
 2. **Income Setup** - Large, centered input for monthly income
-3. **Stream Creation** - Visual stream builder with real-time remaining calculation
+3. **Expense Creation** - Visual expense builder with real-time remaining calculation
 4. **Main Dashboard** - Beautiful financial overview with quick actions
 
 ### Daily Usage
-1. **Quick Add** - Tap stream card → immediate expense entry
+1. **Quick Add** - Tap expense card → immediate expense entry
 2. **Detailed Add** - FAB → full transaction form with mood/notes
 3. **Swipe Actions** - Edit/delete transactions with gesture
-4. **Long Press** - Stream management options
+4. **Long Press** - Expense management options
 
 ## 🧘 Mindful Features
 
@@ -141,7 +141,7 @@ interface AppState {
 - **Breathing Room**: Generous whitespace and gentle interactions
 
 ### Mindful Metrics
-- **Stream Health**: Consistency and mindfulness scoring (not just budget adherence)
+- **Expense Health**: Consistency and mindfulness scoring (not just budget adherence)
 - **Spending Velocity**: Understanding your natural spending patterns
 - **Reflection Prompts**: Monthly ritual for financial mindfulness
 
@@ -195,7 +195,7 @@ The app should promote reflection and awareness, never shame or stress. Financia
 - **Smart Categories**: AI-powered automatic expense categorization
 - **Meditation Integration**: Brief mindfulness exercises before major purchases
 - **Export to Excel**: Beautiful, formatted financial reports
-- **Family Sharing**: Collaborative financial streams for households
+- **Family Sharing**: Collaborative expense management for households
 - **Investment Tracking**: Mindful investment portfolio management
 
 ## 🤝 Contributing

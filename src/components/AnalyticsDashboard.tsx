@@ -256,7 +256,7 @@ const AnalyticsDashboard: React.FC = () => {
         <Card className="p-6">
           <h3 className="text-body font-medium text-foreground mb-4 flex items-center">
             <Heart className="w-4 h-4 mr-2" />
-            Stream Health
+            Expense Health
           </h3>
           <div className="space-y-4">
             {analytics.streamHealth.map(({ stream, health, spent }) => {

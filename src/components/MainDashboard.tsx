@@ -145,14 +145,14 @@ const MainDashboard: React.FC = () => {
     
     // Prevent deletion of savings stream
     if (stream.name === 'Savings') {
-      alert(`⚠️ Cannot delete Savings stream!\n\nThis is a system stream that cannot be deleted.`);
+      alert(`⚠️ Cannot delete Savings expense!\n\nThis is a system expense that cannot be deleted.`);
       return;
     }
     
     const relatedTransactions = state.transactions.filter(t => t.streamId === streamId);
     
     if (relatedTransactions.length > 0) {
-      alert(`⚠️ Cannot delete "${stream.name}"!\n\nThis stream has ${relatedTransactions.length} transaction${relatedTransactions.length > 1 ? 's' : ''}.\n\nYou can only rename it or edit the budget.`);
+      alert(`⚠️ Cannot delete "${stream.name}"!\n\nThis expense has ${relatedTransactions.length} transaction${relatedTransactions.length > 1 ? 's' : ''}.\n\nYou can only rename it or edit the budget.`);
       return;
     }
     
@@ -267,9 +267,9 @@ const MainDashboard: React.FC = () => {
       {/* Streams Section */}
       <div className="flex-1 px-6">
         <div className="mb-6">
-          <h2 className="text-heading text-foreground mb-2">Your Streams</h2>
+          <h2 className="text-heading text-foreground mb-2">Your Expenses</h2>
           <p className="text-caption text-text-secondary">
-            Tap to withdraw/add • Swipe left to delete • Swipe right to edit • Long press + for stream manager
+            Tap to withdraw/add • Swipe left to delete • Swipe right to edit • Long press + for expense manager
           </p>
         </div>
 
@@ -279,13 +279,13 @@ const MainDashboard: React.FC = () => {
               <Plus className="w-8 h-8 text-text-secondary" />
             </div>
             <p className="text-body text-text-secondary mb-4">
-              No streams yet
+              No expenses yet
             </p>
             <p className="text-caption text-text-secondary mb-6">
-              Create your first financial stream to get started
+              Create your first expense category to get started
             </p>
             <Button onClick={() => setIsCreateModalOpen(true)} className="mx-auto">
-              Create Stream
+              Create Expense
             </Button>
           </div>
         ) : (
@@ -363,7 +363,7 @@ const MainDashboard: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6">
           <div className="bg-background rounded-lg p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-heading text-foreground">Stream Manager</h2>
+              <h2 className="text-heading text-foreground">Expense Manager</h2>
               <Button 
                 variant="ghost" 
                 size="icon"
@@ -432,7 +432,7 @@ const MainDashboard: React.FC = () => {
                 className="w-full"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add New Stream
+                Add New Expense
               </Button>
             </div>
           </div>

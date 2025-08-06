@@ -58,7 +58,7 @@ const Settings: React.FC = () => {
   };
 
   const handleResetApp = async () => {
-    if (!confirm('⚠️ This will permanently delete ALL your data including streams, transactions, and settings. This cannot be undone. Are you absolutely sure?')) {
+    if (!confirm('⚠️ This will permanently delete ALL your data including expenses, transactions, and settings. This cannot be undone. Are you absolutely sure?')) {
       return;
     }
 
@@ -189,7 +189,7 @@ const Settings: React.FC = () => {
               <span className="text-foreground">{appInfo.version}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-text-secondary">Total Streams</span>
+              <span className="text-text-secondary">Total Expenses</span>
               <span className="text-foreground">{appInfo.totalStreams}</span>
             </div>
             <div className="flex justify-between">
@@ -236,7 +236,7 @@ const Settings: React.FC = () => {
           <Alert className="mb-4">
             <Shield className="h-4 w-4" />
             <AlertDescription>
-              This action will permanently delete all your data including streams, transactions, 
+              This action will permanently delete all your data including expenses, transactions, 
               templates, and settings. This cannot be undone.
             </AlertDescription>
           </Alert>

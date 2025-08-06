@@ -186,7 +186,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
           {/* Stream Selection */}
           {!preselectedStreamId && (
             <div>
-              <h3 className="text-body font-medium text-foreground mb-3">Choose Stream</h3>
+              <h3 className="text-body font-medium text-foreground mb-3">Choose Expense</h3>
               <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
                 {/* Existing Streams */}
                 {state.streams.filter(stream => stream.name !== 'Others').map((stream) => {
@@ -268,7 +268,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                 className="bg-transparent border-border text-foreground"
               />
               <p className="text-caption text-text-secondary mt-1">
-                Tag is required for Others stream
+                Tag is required for Others expense
               </p>
             </div>
           )}

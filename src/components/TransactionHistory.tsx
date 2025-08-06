@@ -126,7 +126,7 @@ const TransactionHistory: React.FC = () => {
               onClick={() => setSelectedStream('all')}
               className="whitespace-nowrap"
             >
-              All Streams
+              All Expenses
             </Button>
             {state.streams.map(stream => (
               <Button

@@ -72,7 +72,7 @@ const StreamCreateModal: React.FC<StreamCreateModalProps> = ({
         <div className="flex items-center justify-between mb-4">
           <DialogHeader>
             <DialogTitle className="text-heading text-foreground">
-              Create New Stream
+              Create New Expense
             </DialogTitle>
           </DialogHeader>
           <Button
@@ -88,7 +88,7 @@ const StreamCreateModal: React.FC<StreamCreateModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="name" className="text-body text-foreground">
-              Stream Name
+              Expense Name
             </Label>
             <Input
               id="name"
@@ -147,7 +147,7 @@ const StreamCreateModal: React.FC<StreamCreateModalProps> = ({
               disabled={!name.trim() || !amount || isNaN(Number(amount)) || Number(amount) <= 0}
               className="flex-1"
             >
-              Create Stream
+              Create Expense
             </Button>
           </div>
         </form>
